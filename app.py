@@ -2,30 +2,30 @@ import streamlit as st
 import requests
 import json
 
-# --- 1. CONFIGURATION LAYOUT (RESPONSIVE VIEWPORT) ---
+# --- 1. FULLY RESPONSIVE PAGE SETUP ---
 st.set_page_config(page_title="AI Assistant", page_icon="🤖", layout="wide")
 
-# --- 2. PREMIUM READABLE GRAYSCALE CSS UI SKIN ---
+# --- 2. CLEAN HIGH-CONTRAST GRAYSCALE VISUAL THEME ---
 st.markdown("""
     <style>
         /* Light Grayscale Base Theme for Maximum Text Readability */
         .stApp {
             background-color: #f8f9fa !important;
             color: #1a1a1a !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         
-        /* High-Contrast Left Sidebar Palette */
+        /* High-Contrast Left Sidebar */
         section[data-testid="stSidebar"] {
             background-color: #e9ecef !important;
             border-right: 1px solid #dee2e6 !important;
         }
         
-        /* Responsive, Fluid Container for Content Tunnels */
+        /* Fully Fluid Responsive Content Tunnel */
         .block-container {
             max-width: 900px !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
             width: 100% !important;
         }
         
@@ -35,7 +35,7 @@ st.markdown("""
             font-weight: 700 !important;
         }
         
-        /* Clean Grayscale Chat Bubble Boxes with Sharp Contrast */
+        /* High-Visibility Chat Bubble Boxes */
         .stChatMessage {
             background-color: #ffffff !important;
             border: 1px solid #dee2e6 !important;
@@ -47,7 +47,7 @@ st.markdown("""
             width: 100% !important;
         }
         
-        /* Input Bar Alignment Layer */
+        /* Persistent Input Bar Alignment Layer */
         div[data-testid="stChatInput"] {
             background-color: #ffffff !important;
             border-top: 1px solid #dee2e6 !important;
@@ -55,7 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. AUDITED API PLATFORM BASES ---
+# --- 3. AUDITED API PLATFORM CONFIGURATION ---
 GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
@@ -168,9 +168,9 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # CLAUDE FIXED INDICES: Safely grab index 0 array token structure
+                                # CLAUDE'S FIX INTEGRATED EXACTLY: Safe index array parsing
                                 choices = json_data.get("choices", [])
-                                if choices and isinstance(choices, list):
+                                if choices:
                                     delta = choices[0].get("delta", {})
                                     if "content" in delta:
                                         yield delta["content"]

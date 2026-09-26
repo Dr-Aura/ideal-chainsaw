@@ -172,7 +172,7 @@ if prompt := st.chat_input("What is on your mind?"):
                                 choices = json_data.get("choices", [])
                                 if not choices:
                                     continue
-                                # FIXED INDEX: Re-integrating the checked choices[0] array selector rule
+                                # PERFECT FIX: Explicit list element index extraction
                                 delta = choices[0].get("delta", {})
                                 if "content" in delta and delta["content"]:
                                     yield delta["content"]

@@ -116,7 +116,7 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # CRITICAL FIX: Explicitly using choices list array index index 0
+                                # CRITICAL FIX: Explicitly using choices list array index [0]
                                 delta = json_data["choices"][0]["delta"]
                                 if "content" in delta:
                                     yield delta["content"]

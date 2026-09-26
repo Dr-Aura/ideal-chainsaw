@@ -16,12 +16,12 @@ with st.sidebar:
     st.title("⚙️ AI Configuration")
     st.markdown("Customize your open-source assistant experience.")
     
-    # Model Selector
+    # Model Selector - Updated with verified active models
     model_option = st.selectbox(
         "Choose an open-source model:",
         (
-            "llama3-8b-8192", 
             "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant", 
             "mixtral-8x7b-32768", 
             "gemma2-9b-it"
         ),
@@ -67,12 +67,12 @@ if prompt := st.chat_input("What is on your mind?"):
         
         try:
             response = requests.post(
-                "https://groq.com",
+                "https://api.groq.com/openai/v1/chat/completions",
                 headers=headers,
                 json=payload
             )
             
-            # Diagnostic check: If Groq returns an error code, display it directly
+            # Diagnostic check
             if response.status_code != 200:
                 reply = f"⚠️ API Error (Status {response.status_code}): {response.text}"
             else:

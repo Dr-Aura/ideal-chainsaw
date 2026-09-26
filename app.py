@@ -20,10 +20,9 @@ with st.sidebar:
     model_option = st.selectbox(
         "Choose an open-source model:",
         (
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant", 
-            "mixtral-8x7b-32768", 
-            "gemma2-9b-it"
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-120b",
+            "minimaxai/minimax-m2.7"
         ),
         index=0
     )
@@ -67,7 +66,7 @@ if prompt := st.chat_input("What is on your mind?"):
         
         try:
             response = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
+                "https://groq.com",
                 headers=headers,
                 json=payload
             )

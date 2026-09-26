@@ -4,8 +4,8 @@ import json
 
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
-# The correct API endpoint base structure
-GROQ_API_BASE = "https://groq.com"
+# BOTH BUGS FIXED PERMANENTLY: Correct host endpoint URL base
+GROQ_API_BASE = "https://api.groq.com/openai/v1"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -106,7 +106,7 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # FIXED PERMANENTLY: Added the missing [0] index parameter for choices list
+                                # FIXED INDICES: Safely target index 0 of the choices array stream packet
                                 delta = json_data["choices"][0]["delta"]
                                 if "content" in delta:
                                     yield delta["content"]

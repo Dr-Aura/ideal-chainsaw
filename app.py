@@ -1,53 +1,59 @@
 import streamlit as st
 import requests
 
-# Set page title and layout
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
-# Securely grab the API key from Streamlit's dashboard secrets
+# The correct API endpoint base structure
+GROQ_API_BASE = "https://api.groq.com/openai/v1"
+FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
+
 if "GROQ_API_KEY" in st.secrets:
     api_key = st.secrets["GROQ_API_KEY"]
 else:
     st.error("Please add your GROQ_API_KEY to the Streamlit Secrets manager.")
     st.stop()
 
-# --- SIDEBAR CONFIGURATION ---
+
+@st.cache_data(ttl=3600)  # Refresh cache list once per hour maximum
+def fetch_available_models(key: str) -> list[str]:
+    """GET the current list of active model IDs from Groq."""
+    headers = {"Authorization": f"Bearer {key}"}
+    try:
+        resp = requests.get(f"{GROQ_API_BASE}/models", headers=headers, timeout=10)
+        resp.raise_for_status()
+        data = resp.json().get("data", [])
+        model_ids = [m["id"] for m in data if m.get("active", True)]
+        return sorted(model_ids) if model_ids else FALLBACK_MODELS
+    except Exception:
+        return FALLBACK_MODELS
+
+
 with st.sidebar:
     st.title("⚙️ AI Configuration")
-    st.markdown("Customize your open-source assistant experience.")
-    
-    # Model Selector - Updated with verified active models
+
+    available_models = fetch_available_models(api_key)
+
     model_option = st.selectbox(
-        "Choose an open-source model:",
-        (
-            "qwen/qwen3.8-27b",
-            "openai/gpt-oss-120b",
-            "minimaxai/minimax-m2.7"
-        ),
+        "Choose a model:",
+        available_models,
         index=0
     )
-    
+
     st.markdown("---")
-    
-    # Clear Chat Button
     if st.button("🧹 Clear Chat History", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# --- MAIN INTERFACE ---
 st.title("🤖 Custom Cloud AI Assistant")
 st.caption(f"Powered by Groq Cloud | Active Model: `{model_option}`")
 
-# Initialize persistent memory structure
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display conversation history visually
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Handle user input
 if prompt := st.chat_input("What is on your mind?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -58,26 +64,23 @@ if prompt := st.chat_input("What is on your mind?"):
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
-        
         payload = {
             "model": model_option,
             "messages": st.session_state.messages
         }
-        
         try:
             response = requests.post(
-                "https://groq.com",
+                f"{GROQ_API_BASE}/chat/completions",
                 headers=headers,
-                json=payload
+                json=payload,
+                timeout=30
             )
-            
-            # Diagnostic check
             if response.status_code != 200:
                 reply = f"⚠️ API Error (Status {response.status_code}): {response.text}"
             else:
                 response_json = response.json()
-                reply = response_json["choices"]["message"]["content"]
-                
+                # FIXED: Added the missing list array [0] index parameter
+                reply = response_json["choices"][0]["message"]["content"]
         except Exception as e:
             reply = f"⚠️ Network Connection Error: {str(e)}"
 

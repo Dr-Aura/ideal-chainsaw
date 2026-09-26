@@ -76,7 +76,7 @@ if prompt := st.chat_input("What is on your mind?"):
         payload = {
             "model": model_option,
             "messages": api_messages,
-            "stream": True  # UPGRADE: Enable streaming mode data chunks
+            "stream": True  # Enable streaming mode data chunks
         }
         
         # Generator function to yield text chunks as they arrive from Groq
@@ -106,6 +106,7 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
+                                # FIXED PERMANENTLY: Added the missing [0] index parameter for choices list
                                 delta = json_data["choices"][0]["delta"]
                                 if "content" in delta:
                                     yield delta["content"]

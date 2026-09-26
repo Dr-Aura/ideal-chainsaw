@@ -4,7 +4,7 @@ import requests
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
 # The correct API endpoint base structure
-GROQ_API_BASE = "https://api.groq.com/openai/v1"
+GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -50,7 +50,11 @@ st.caption(f"Powered by Groq Cloud | Active Model: `{model_option}`")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Display conversation history visually
 for message in st.session_state.messages:
+    # Skip rendering system rules on the screen
+    if message["role"] == "system":
+        continue
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
@@ -64,9 +68,14 @@ if prompt := st.chat_input("What is on your mind?"):
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
+        
+        # LANGUAGE RULE UPGRADE: Inject a system instruction payload to enforce English
+        api_messages = [{"role": "system", "content": "You are a helpful AI assistant. You must always reply in English."}]
+        api_messages.extend(st.session_state.messages)
+        
         payload = {
             "model": model_option,
-            "messages": st.session_state.messages
+            "messages": api_messages
         }
         try:
             response = requests.post(
@@ -79,7 +88,6 @@ if prompt := st.chat_input("What is on your mind?"):
                 reply = f"⚠️ API Error (Status {response.status_code}): {response.text}"
             else:
                 response_json = response.json()
-                # FIXED: Added the missing list array [0] index parameter
                 reply = response_json["choices"][0]["message"]["content"]
         except Exception as e:
             reply = f"⚠️ Network Connection Error: {str(e)}"

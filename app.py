@@ -1,10 +1,11 @@
 import streamlit as st
 import requests
+import json
 
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
 # The correct API endpoint base structure
-GROQ_API_BASE = "https://api.groq.com/openai/v1"
+GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -74,23 +75,48 @@ if prompt := st.chat_input("What is on your mind?"):
         
         payload = {
             "model": model_option,
-            "messages": api_messages
+            "messages": api_messages,
+            "stream": True  # UPGRADE: Enable streaming mode data chunks
         }
-        try:
-            response = requests.post(
-                f"{GROQ_API_BASE}/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            if response.status_code != 200:
-                reply = f"⚠️ API Error (Status {response.status_code}): {response.text}"
-            else:
-                response_json = response.json()
-                # FIXED PERMANENTLY: Using the correct list array index mapping syntax [0]
-                reply = response_json["choices"][0]["message"]["content"]
-        except Exception as e:
-            reply = f"⚠️ Network Connection Error: {str(e)}"
+        
+        # Generator function to yield text chunks as they arrive from Groq
+        def response_generator():
+            try:
+                response = requests.post(
+                    f"{GROQ_API_BASE}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    stream=True,  # Crucial for handling raw byte streams
+                    timeout=30
+                )
+                
+                if response.status_code != 200:
+                    yield f"⚠️ API Error (Status {response.status_code}): {response.text}"
+                    return
 
-        st.markdown(reply)
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+                for line in response.iter_lines():
+                    if line:
+                        # Convert bytes to string and strip formatting spaces
+                        line_str = line.decode("utf-8").strip()
+                        
+                        # Groq closes streams with data: [DONE]
+                        if line_str == "data: [DONE]":
+                            break
+                        
+                        if line_str.startswith("data: "):
+                            try:
+                                json_data = json.loads(line_str[6:])
+                                delta = json_data["choices"][0]["delta"]
+                                if "content" in delta:
+                                    yield delta["content"]
+                            except Exception:
+                                continue
+                                
+            except Exception as e:
+                yield f"⚠️ Network Connection Error: {str(e)}"
+
+        # Display streaming response to user dynamically in real-time
+        full_reply = st.write_stream(response_generator())
+        
+        # Append the finalized completed text string to persistent conversation memory
+        st.session_state.messages.append({"role": "assistant", "content": full_reply})

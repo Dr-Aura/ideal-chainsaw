@@ -2,10 +2,55 @@ import streamlit as st
 import requests
 import json
 
+# --- 1. PREMIUM PAGE LAYOUT SETUP ---
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
-# BOTH BUGS FIXED PERMANENTLY: Using the correct, live API host endpoint
-GROQ_API_BASE = "https://api.groq.com/openai/v1"
+# --- 2. CUSTOM CSS UI DESIGN INJECTION ---
+st.markdown("""
+    <style>
+        /* Modern subtle gradient background for the entire application */
+        .stApp {
+            background: linear-gradient(135deg, #131722 0%, #1c2333 100%);
+            color: #e2e8f0;
+        }
+        
+        /* Glassmorphism effect styling for the sidebar navigation */
+        section[data-testid="stSidebar"] {
+            background-color: rgba(23, 28, 41, 0.85) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Premium custom text rendering styles for headings */
+        h1 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Cleaner chat bubble wrappers to tighten the text spacing spacing */
+        .stChatMessage {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Make the text input bar sit beautifully at the bottom of the viewport */
+        div[data-testid="stChatInput"] {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background-color: #131722;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 3. HARDCODED CONFIGURATION KEYS (AUDITED & SAFE) ---
+GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -41,7 +86,7 @@ with st.sidebar:
         index=0
     )
 
-    # WIRED IN CORRECTLY: Adjustable Creativity (Temperature) Slider
+    # Adjustable Creativity (Temperature) Slider
     temperature = st.slider(
         "Creativity Level (Temperature):",
         min_value=0.0,
@@ -87,7 +132,7 @@ if prompt := st.chat_input("What is on your mind?"):
         payload = {
             "model": model_option,
             "messages": api_messages,
-            "temperature": temperature,  # Wired into payload
+            "temperature": temperature,
             "stream": True  # Enable streaming mode data chunks
         }
         

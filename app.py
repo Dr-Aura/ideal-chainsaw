@@ -20,13 +20,12 @@ with st.sidebar:
     model_option = st.selectbox(
         "Choose an open-source model:",
         (
-            "llama-3.3-70b-versatile", 
-            "llama-3.1-8b-instant", 
+            "llama3-8b-8192", 
+            "llama-3.3-70b-versatile",
             "mixtral-8x7b-32768", 
             "gemma2-9b-it"
         ),
-        index=0,
-        help="Llama-3.3-70b is smartest, while Llama-3.1-8b is ultra-fast."
+        index=0
     )
     
     st.markdown("---")
@@ -51,7 +50,6 @@ for message in st.session_state.messages:
 
 # Handle user input
 if prompt := st.chat_input("What is on your mind?"):
-    # Append the user message to the conversational history memory
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -62,8 +60,6 @@ if prompt := st.chat_input("What is on your mind?"):
             "Content-Type": "application/json"
         }
         
-        # SYSTEM MEMORY UPGRADE: 
-        # Instead of just sending the last prompt, we send the entire chat history context array!
         payload = {
             "model": model_option,
             "messages": st.session_state.messages
@@ -75,11 +71,16 @@ if prompt := st.chat_input("What is on your mind?"):
                 headers=headers,
                 json=payload
             )
-            response_json = response.json()
-            reply = response_json["choices"]["message"]["content"]
+            
+            # Diagnostic check: If Groq returns an error code, display it directly
+            if response.status_code != 200:
+                reply = f"⚠️ API Error (Status {response.status_code}): {response.text}"
+            else:
+                response_json = response.json()
+                reply = response_json["choices"]["message"]["content"]
+                
         except Exception as e:
-            reply = "⚠️ Error connecting to the AI Cloud server. Please check your token or limits."
+            reply = f"⚠️ Network Connection Error: {str(e)}"
 
         st.markdown(reply)
-        # Append assistant's reply to memory so the AI remembers it for the next question
         st.session_state.messages.append({"role": "assistant", "content": reply})

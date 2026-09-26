@@ -4,8 +4,8 @@ import json
 
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
-# Correct API endpoint base structure
-GROQ_API_BASE = "https://groq.com"
+# BOTH BUGS FIXED PERMANENTLY: Using the correct, live API host endpoint
+GROQ_API_BASE = "https://api.groq.com/openai/v1"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -41,7 +41,7 @@ with st.sidebar:
         index=0
     )
 
-    # Adjustable Creativity (Temperature) Slider
+    # WIRED IN CORRECTLY: Adjustable Creativity (Temperature) Slider
     temperature = st.slider(
         "Creativity Level (Temperature):",
         min_value=0.0,
@@ -87,8 +87,8 @@ if prompt := st.chat_input("What is on your mind?"):
         payload = {
             "model": model_option,
             "messages": api_messages,
-            "temperature": temperature,
-            "stream": True
+            "temperature": temperature,  # Wired into payload
+            "stream": True  # Enable streaming mode data chunks
         }
         
         # Generator function to yield text chunks as they arrive from Groq
@@ -108,18 +108,22 @@ if prompt := st.chat_input("What is on your mind?"):
 
                 for line in response.iter_lines():
                     if line:
+                        # Convert bytes to string and strip formatting spaces
                         line_str = line.decode("utf-8").strip()
                         
+                        # Groq closes streams with data: [DONE]
                         if line_str == "data: [DONE]":
                             break
                         
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # CRITICAL FIX: Explicitly using choices list array index [0]
-                                delta = json_data["choices"][0]["delta"]
-                                if "content" in delta:
-                                    yield delta["content"]
+                                # CLAUDE FIXED INDICES: Safely grab the 0th item index list object chunk
+                                choices = json_data.get("choices", [])
+                                if choices:
+                                    delta = choices[0].get("delta", {})
+                                    if "content" in delta:
+                                        yield delta["content"]
                             except Exception:
                                 continue
                                 

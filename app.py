@@ -4,8 +4,8 @@ import json
 
 st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
 
-# BOTH BUGS FIXED PERMANENTLY: Correct host endpoint URL base
-GROQ_API_BASE = "https://api.groq.com/openai/v1"
+# The correct API endpoint base structure
+GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
 if "GROQ_API_KEY" in st.secrets:
@@ -34,10 +34,21 @@ with st.sidebar:
 
     available_models = fetch_available_models(api_key)
 
+    # Model Selector
     model_option = st.selectbox(
         "Choose a model:",
         available_models,
         index=0
+    )
+
+    # UPGRADE: Adjustable Creativity (Temperature) Slider
+    temperature = st.slider(
+        "Creativity Level (Temperature):",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.7,  # Default balanced setting
+        step=0.1,
+        help="Lower values are more analytical and precise. Higher values are more creative and experimental."
     )
 
     st.markdown("---")
@@ -46,7 +57,7 @@ with st.sidebar:
         st.rerun()
 
 st.title("🤖 Custom Cloud AI Assistant")
-st.caption(f"Powered by Groq Cloud | Active Model: `{model_option}`")
+st.caption(f"Powered by Groq Cloud | Model: `{model_option}` | Temp: `{temperature}`")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -76,6 +87,7 @@ if prompt := st.chat_input("What is on your mind?"):
         payload = {
             "model": model_option,
             "messages": api_messages,
+            "temperature": temperature,  # Pass the slider value to Groq
             "stream": True  # Enable streaming mode data chunks
         }
         
@@ -106,7 +118,6 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # FIXED INDICES: Safely target index 0 of the choices array stream packet
                                 delta = json_data["choices"][0]["delta"]
                                 if "content" in delta:
                                     yield delta["content"]

@@ -2,54 +2,60 @@ import streamlit as st
 import requests
 import json
 
-# --- 1. PREMIUM PAGE LAYOUT SETUP ---
-st.set_page_config(page_title="AI Cloud Assistant", page_icon="🤖", layout="wide")
+# --- 1. CONFIGURATION LAYOUT (RESPONSIVE VIEWPORT) ---
+st.set_page_config(page_title="AI Assistant", page_icon="🤖", layout="wide")
 
-# --- 2. CUSTOM CSS UI DESIGN INJECTION ---
+# --- 2. PREMIUM READABLE GRAYSCALE CSS UI SKIN ---
 st.markdown("""
     <style>
-        /* Modern subtle gradient background for the entire application */
+        /* Light Grayscale Base Theme for Maximum Text Readability */
         .stApp {
-            background: linear-gradient(135deg, #131722 0%, #1c2333 100%);
-            color: #e2e8f0;
+            background-color: #f8f9fa !important;
+            color: #1a1a1a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         
-        /* Glassmorphism effect styling for the sidebar navigation */
+        /* High-Contrast Left Sidebar Palette */
         section[data-testid="stSidebar"] {
-            background-color: rgba(23, 28, 41, 0.85) !important;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background-color: #e9ecef !important;
+            border-right: 1px solid #dee2e6 !important;
         }
         
-        /* Premium custom text rendering styles for headings */
-        h1 {
-            font-family: 'Inter', sans-serif;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        /* Responsive, Fluid Container for Content Tunnels */
+        .block-container {
+            max-width: 900px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+            width: 100% !important;
         }
         
-        /* Cleaner chat bubble wrappers to tighten the text spacing spacing */
+        /* Crisp, Deep Charcoal Header Typography */
+        h1, h2, h3 {
+            color: #111111 !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Clean Grayscale Chat Bubble Boxes with Sharp Contrast */
         .stChatMessage {
-            background-color: rgba(255, 255, 255, 0.02) !important;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 8px !important;
+            padding: 1.25rem !important;
+            margin-bottom: 0.75rem !important;
+            color: #212529 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+            width: 100% !important;
         }
         
-        /* Make the text input bar sit beautifully at the bottom of the viewport */
+        /* Input Bar Alignment Layer */
         div[data-testid="stChatInput"] {
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background-color: #131722;
+            background-color: #ffffff !important;
+            border-top: 1px solid #dee2e6 !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HARDCODED CONFIGURATION KEYS (AUDITED & SAFE) ---
+# --- 3. AUDITED API PLATFORM BASES ---
 GROQ_API_BASE = "https://groq.com"
 FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
 
@@ -75,7 +81,7 @@ def fetch_available_models(key: str) -> list[str]:
 
 
 with st.sidebar:
-    st.title("⚙️ AI Configuration")
+    st.title("⚙️ Configuration")
 
     available_models = fetch_available_models(api_key)
 
@@ -92,8 +98,7 @@ with st.sidebar:
         min_value=0.0,
         max_value=1.0,
         value=0.7,
-        step=0.1,
-        help="Lower values are more analytical and precise. Higher values are more creative and experimental."
+        step=0.1
     )
 
     st.markdown("---")
@@ -101,8 +106,8 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-st.title("🤖 Custom Cloud AI Assistant")
-st.caption(f"Powered by Groq Cloud | Model: `{model_option}` | Temp: `{temperature}`")
+st.title("🤖 AI Assistant")
+st.caption(f"Powered by Groq Cloud | Model: {model_option} | Temp: {temperature}")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -143,7 +148,7 @@ if prompt := st.chat_input("What is on your mind?"):
                     f"{GROQ_API_BASE}/chat/completions",
                     headers=headers,
                     json=payload,
-                    stream=True,
+                    stream=True,  # Crucial for handling raw byte streams
                     timeout=30
                 )
                 
@@ -163,9 +168,9 @@ if prompt := st.chat_input("What is on your mind?"):
                         if line_str.startswith("data: "):
                             try:
                                 json_data = json.loads(line_str[6:])
-                                # CLAUDE FIXED INDICES: Safely grab the 0th item index list object chunk
+                                # CLAUDE FIXED INDICES: Safely grab index 0 array token structure
                                 choices = json_data.get("choices", [])
-                                if choices:
+                                if choices and isinstance(choices, list):
                                     delta = choices[0].get("delta", {})
                                     if "content" in delta:
                                         yield delta["content"]

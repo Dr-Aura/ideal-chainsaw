@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure Your Private API Credentials
-Create a local-only secrets configuration file (this file should be protected by `.gitignore` so it stays safe from public commits):
+Create a local-only secrets configuration file (this file is protected by `.gitignore` so it stays safe from public commits):
 ```bash
 mkdir -p .streamlit
 cat << 'LOCAL_EOF' > .streamlit/secrets.toml
@@ -59,4 +59,4 @@ This project is configured out-of-the-box for deployment on **Streamlit Communit
 3. Inject your `GROQ_API_KEY = "gsk_..."` directly into the deployment dashboard's **Secrets** management panel under TOML notation.
 
 ## 📜 License
-This project is open-source and free to adapt.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

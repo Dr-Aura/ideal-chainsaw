@@ -3,7 +3,7 @@
 **Repository:** [github.com/Dr-Aura/ideal-chainsaw](https://github.com/Dr-Aura/ideal-chainsaw)
 **Live app:** [ideal-chainsaw-but7vpbezomeqpqw6vghwa.streamlit.app](https://ideal-chainsaw-but7vpbezomeqpqw6vghwa.streamlit.app/)
 **Android package ID:** `com.draura.aiassistant`
-**Report date:** 27 September 2026
+**Report date:** 28 September 2026
 **Status:** Sideload release live on GitHub; Play Store submission pending
 
 ---
@@ -17,9 +17,13 @@ actual work of talking to Groq's API and rendering the chat interface, and
 an Android application shell (built with Apache Cordova) that wraps that
 web app in a native, installable package.
 
-The result is a single codebase that runs identically in a desktop
-browser, on Streamlit Community Cloud, and as a standalone Android app —
-without maintaining separate web and mobile implementations.
+**Important:** This GitHub repository currently contains only the Streamlit
+web application (`app.py` and related files). The Cordova/Android project
+source is **not** included here. The published APK on the Releases page was
+built from a local Cordova project that remains private for now.
+
+The web app runs identically in a desktop browser and on Streamlit Community
+Cloud. The Android shell simply loads the live Streamlit URL inside a WebView.
 
 ## 2. What the App Actually Does
 
@@ -46,7 +50,7 @@ closing the app or the browser tab discards it.
 | Frontend / UI | Streamlit (Python web app framework) |
 | AI inference | Groq Cloud API, via the official `groq` Python SDK |
 | Language | Python 3.13 |
-| Mobile packaging | Apache Cordova (WebView-based native Android wrapper) |
+| Mobile packaging | Apache Cordova (WebView-based native Android wrapper) — *source not in this repo* |
 | Android build system | Gradle 8.14.2 |
 | Android SDK | Platform 36 (Android 16), Build-Tools 36.0.0 |
 | JDK | OpenJDK 21 |
@@ -61,11 +65,12 @@ The system has two distinct layers that communicate over plain HTTPS:
 - **Streamlit application (`app.py`)** — runs on Streamlit Community
   Cloud. Holds the Groq API key (via Streamlit's encrypted secrets
   manager), maintains chat session state, calls the Groq SDK, and streams
-  tokens back to the browser as they're generated.
+  tokens back to the browser as they're generated. **This is the only
+  layer present in this repository.**
 - **Cordova Android shell** — a thin native wrapper whose only job is to
   open a WebView pointed at the live Streamlit URL. It contains no
   application logic of its own; all functionality lives in the Streamlit
-  layer.
+  layer. Source is currently kept private.
 
 This means the Android app requires an active internet connection at all
 times — there is no offline mode, and no AI processing happens on-device.
@@ -106,9 +111,8 @@ would prevent publishing further updates under the same listing.
 
 User-typed chat messages are transmitted to Groq Cloud over encrypted
 HTTPS to generate responses. No other personal data (identity, location,
-device information) is collected by the application itself. A published
-privacy policy discloses this data flow, as required for Play Store
-submission.
+device information) is collected by the application itself. See the
+[Privacy Policy](../../PRIVACY.md) for full details.
 
 ## 6. Build & Release Pipeline
 
@@ -140,10 +144,10 @@ fee.
 | Component | Status | Reference |
 |---|---|---|
 | Streamlit web app | Live and functional | `ideal-chainsaw-but7vpbezomeqpqw6vghwa.streamlit.app` |
-| Android debug build | Working, tested on-device | — |
-| Android signed release (`.aab`) | Built and signed successfully | — |
+| Android debug build | Working, tested on-device | Source not in this repo |
+| Android signed release (`.aab`) | Built and signed successfully | Source not in this repo |
 | GitHub sideload release | Published, publicly downloadable | `github.com/Dr-Aura/ideal-chainsaw/releases/tag/v1.0.0` |
-| Privacy policy | Written and published | See appendix |
+| Privacy policy | Published in this repository | [PRIVACY.md](../../PRIVACY.md) |
 | Google Play submission | Prepared, not yet submitted | Blocked on $25 developer registration fee |
 
 ## 8. Known Limitations
@@ -159,11 +163,14 @@ fee.
   consideration for Google Play's minimum-functionality policy, which can
   flag simple website-wrapper apps; adding persistent local storage and
   offline handling would meaningfully strengthen the submission.
+- **Cordova source not published** — only the Streamlit layer is open in
+  this repository.
 
 ## 9. Roadmap
 
 - [ ] Persistent chat history (local storage, e.g. SQLite)
 - [ ] Offline / no-connection handling in the Android shell
+- [ ] Publish Cordova/Android source (or document why it remains private)
 - [ ] Complete Google Play Store submission once the developer account
       fee is paid
 - [ ] Custom app icon, splash screen, and feature graphic
@@ -177,6 +184,7 @@ fee.
 - Live app: <https://ideal-chainsaw-but7vpbezomeqpqw6vghwa.streamlit.app/>
 - GitHub release (sideload APK):
   <https://github.com/Dr-Aura/ideal-chainsaw/releases/tag/v1.0.0>
+- Privacy policy: <https://github.com/Dr-Aura/ideal-chainsaw/blob/main/PRIVACY.md>
 
 ---
 

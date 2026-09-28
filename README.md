@@ -12,9 +12,9 @@ The application bypasses heavy local hardware constraints (like dedicated GPUs) 
 - **Creativity Control:** Features a live sidebar temperature slider to seamlessly adjust the model's tone from strict/analytical to creative/experimental.
 
 ## 🛠️ Architecture & Tech Stack
-- **Frontend/Framework:** Streamlit (Responsive Viewport Mode) [1]
-- **API Engine Client:** Official Groq Python Client Library [1]
-- **Operating System Baseline:** Debian 13 Linux [1]
+- **Frontend/Framework:** Streamlit (Responsive Viewport Mode)
+- **API Engine Client:** Official Groq Python Client Library
+- **Operating System Baseline:** Debian 13 Linux
 
 ## 🚀 Local Installation & Setup
 
@@ -22,7 +22,7 @@ If you want to run this private interface locally on your machine, follow these 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com
+git clone https://github.com/Dr-Aura/ideal-chainsaw.git
 cd ideal-chainsaw
 ```
 
@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Configure Your Private API Credentials
-Create a local-only secrets configuration file (this file is pre-configured in `.gitignore` to stay safe from public commits):
+Create a local-only secrets configuration file (this file should be protected by `.gitignore` so it stays safe from public commits):
 ```bash
 mkdir -p .streamlit
 cat << 'LOCAL_EOF' > .streamlit/secrets.toml

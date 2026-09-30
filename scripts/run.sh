@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run.sh — start ideal-chainsaw (works from any directory; no cd needed)
+# run.sh — start ideal-chainsaw (works from any directory; no user cd needed)
 set -euo pipefail
 
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -26,12 +26,11 @@ if [[ ! -x "$VENV_ABS/bin/python" ]]; then
   bash "$SETUP"
 fi
 
-VENV_PY="$VENV_ABS/bin/python"
 STREAMLIT="$VENV_ABS/bin/streamlit"
-
 if [[ ! -x "$STREAMLIT" ]]; then
   echo "streamlit missing — reinstalling dependencies…"
   bash "$SETUP"
+  STREAMLIT="$VENV_ABS/bin/streamlit"
 fi
 
 if [[ ! -f "$APP" ]]; then
@@ -39,11 +38,12 @@ if [[ ! -f "$APP" ]]; then
   exit 1
 fi
 
-# Run from project root so relative imports / data paths resolve
-buitin_cd() { command cd "$@"; }
-buitin_cd "$ROOT" || {
+# Enter project root so data/ and relative paths resolve.
+# Use the shell builtin explicitly (lowercase "cd" — not "CD").
+if ! builtin cd "$ROOT"; then
   echo "ERROR: cannot enter project directory: $ROOT"
+  echo "  Check that the path exists and you have permission."
   exit 1
-}
+fi
 
 exec "$STREAMLIT" run "$APP" "$@"

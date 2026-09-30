@@ -1,25 +1,49 @@
 #!/usr/bin/env bash
-# run.sh — start ideal-chainsaw with the project venv
+# run.sh — start ideal-chainsaw (works from any directory; no cd needed)
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+if command -v readlink >/dev/null 2>&1; then
+  if readlink -f "$SCRIPT_PATH" >/dev/null 2>&1; then
+    SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH")"
+  fi
+fi
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+ROOT="$(dirname "$SCRIPT_DIR")"
 
-VENV_DIR="${VENV_DIR:-ai-env}"
-
-if [[ ! -f "$VENV_DIR/bin/activate" ]]; then
-  echo "No venv at $VENV_DIR — running setup first…"
-  bash "$ROOT/scripts/setup_debian.sh"
+VENV_NAME="${VENV_DIR:-ai-env}"
+if [[ "$VENV_NAME" = /* ]]; then
+  VENV_ABS="$VENV_NAME"
+else
+  VENV_ABS="$ROOT/$VENV_NAME"
 fi
 
-# shellcheck disable=SC1091
-source "$VENV_DIR/bin/activate"
+SETUP="$ROOT/scripts/setup_debian.sh"
+APP="$ROOT/app.py"
 
-if ! command -v streamlit >/dev/null 2>&1; then
-  echo "streamlit not found in venv — reinstalling dependencies…"
-  bash "$ROOT/scripts/setup_debian.sh"
-  # shellcheck disable=SC1091
-  source "$VENV_DIR/bin/activate"
+if [[ ! -x "$VENV_ABS/bin/python" ]]; then
+  echo "No venv at $VENV_ABS — running setup…"
+  bash "$SETUP"
 fi
 
-exec streamlit run app.py "$@"
+VENV_PY="$VENV_ABS/bin/python"
+STREAMLIT="$VENV_ABS/bin/streamlit"
+
+if [[ ! -x "$STREAMLIT" ]]; then
+  echo "streamlit missing — reinstalling dependencies…"
+  bash "$SETUP"
+fi
+
+if [[ ! -f "$APP" ]]; then
+  echo "ERROR: app.py not found at $APP"
+  exit 1
+fi
+
+# Run from project root so relative imports / data paths resolve
+buitin_cd() { command cd "$@"; }
+buitin_cd "$ROOT" || {
+  echo "ERROR: cannot enter project directory: $ROOT"
+  exit 1
+}
+
+exec "$STREAMLIT" run "$APP" "$@"

@@ -1,34 +1,36 @@
 # ideal-chainsaw 🤖
 
-A minimalist, high-contrast **AI chat app** built with **Python**, **Streamlit**, and the official **Groq Cloud SDK**. Developed on **Debian 13 (Trixie)**.
+A minimalist, production-oriented **AI chat app** built with **Python**, **Streamlit**, and the official **Groq Cloud SDK**.
 
 Streams open-source LLMs in real time via Groq — no local GPU required.
 
-## ✨ Key Features
+## ✨ Features
 
-- **Official Groq SDK** — typed streaming completions, embeddings, and Whisper transcription
-- **Dynamic model list** — live catalog from Groq (with safe fallbacks)
-- **Persistent named chats** — multiple conversations saved under `data/chats.json` (local)
-- **Message actions** — regenerate, continue, shorter / longer / more formal, download reply
-- **Context meter** — approximate token usage with optional “summarize older messages” trim
-- **System presets + profile** — Helpful / Engineer / Teacher / Concise / Creative / Custom, plus a persistent “about you” snippet
-- **Multi-model compare** — stream the same prompt to two models side by side
-- **Web search tool** — optional DuckDuckGo search injected into context when relevant
-- **Voice input** — record audio → Groq Whisper transcription → send as message
-- **K-means topic clustering** — Groq `nomic-embed-text-v1_5` embeddings + scikit-learn + PCA + LLM topic labels; scope = current chat or all chats
-- **Dark / light theme** — high-contrast grayscale UI
-- **Export** — download the current chat as Markdown
-- **Creativity control** — temperature slider
+- **Groq SDK** — chat streaming, embeddings (`nomic-embed-text-v1_5`), Whisper STT
+- **Dynamic model catalog** with safe fallbacks
+- **Persistent named chats** (`data/chats.json`, atomic writes)
+- **Message actions** — regenerate, continue, shorter / longer / formal, download
+- **Context meter** + optional summarize-to-trim
+- **System presets + user profile**
+- **Multi-model compare**
+- **Optional web search** (DuckDuckGo)
+- **Voice input** (browser record → Whisper)
+- **K-means topic clustering** (current chat or all chats)
+- **Dark / light theme**, Markdown export
 
-## 🛠️ Tech Stack
+## 🏗️ Project layout
 
-| Layer | Tech |
-|-------|------|
-| UI | Streamlit |
-| LLM / embeddings / STT | Groq Python SDK |
-| Clustering | scikit-learn (K-means, PCA) + Plotly |
-| Web search | duckduckgo-search |
-| Persistence | Local JSON (`data/`) |
+```
+app.py              # Streamlit UI
+lib/
+  config.py         # Limits, presets, API key resolution
+  storage.py        # Atomic JSON persistence
+  groq_ops.py       # Client, retries, streaming, embeddings, STT
+  clustering.py     # K-means + topic labels
+  search.py         # DuckDuckGo helper
+Dockerfile          # Non-root image + healthcheck
+data/               # Local chats/settings (gitignored)
+```
 
 ## 🚀 Local setup
 
@@ -36,36 +38,59 @@ Streams open-source LLMs in real time via Groq — no local GPU required.
 git clone https://github.com/Dr-Aura/ideal-chainsaw.git
 cd ideal-chainsaw
 python3 -m venv ai-env
-source ai-env/bin/activate   # Windows: ai-env\Scripts\activate
+source ai-env/bin/activate
 pip install -r requirements.txt
-```
 
-Create secrets (never commit this file):
-
-```bash
 mkdir -p .streamlit
-cat << 'LOCAL_EOF' > .streamlit/secrets.toml
+cat << 'EOF' > .streamlit/secrets.toml
 GROQ_API_KEY = "gsk_your_actual_private_key_here"
-LOCAL_EOF
-```
+EOF
 
-Run:
-
-```bash
 streamlit run app.py
 ```
 
-Open `http://localhost:8501/`.
+Or with an environment variable instead of secrets:
 
-Chat history and settings are stored in the local `data/` folder (gitignored).
+```bash
+export GROQ_API_KEY=gsk_...
+streamlit run app.py
+```
 
-## 🌐 Streamlit Community Cloud
+## 🐳 Docker
 
-1. Push this repo to GitHub.
-2. Deploy on Streamlit Community Cloud.
-3. Add `GROQ_API_KEY = "gsk_..."` under **Secrets** (TOML).
+```bash
+docker build -t ideal-chainsaw .
+docker run --rm -p 8501:8501 \
+  -e GROQ_API_KEY=gsk_... \
+  -v chainsaw-data:/app/data \
+  ideal-chainsaw
+```
 
-Note: on Community Cloud the filesystem is ephemeral, so chat persistence resets on reboot. Export chats you care about, or run locally for durable history.
+Health endpoint: `http://localhost:8501/_stcore/health`
+
+## ☁️ Streamlit Community Cloud
+
+1. Deploy this repo.
+2. Secrets → `GROQ_API_KEY = "gsk_..."`
+3. Filesystem is **ephemeral** — chats reset on reboot. Use **Export** for anything important, or run Docker/local for durable storage.
+
+## 🔒 Production notes
+
+| Guard | Default |
+|-------|---------|
+| Max user message | 12 000 chars (`CHAINSAW_MAX_MSG_CHARS`) |
+| Max messages / chat | 200 (`CHAINSAW_MAX_MESSAGES`) |
+| Max stored chats | 50 (`CHAINSAW_MAX_CHATS`) |
+| Groq retries | 5 (`CHAINSAW_GROQ_RETRIES`) |
+| Groq timeout | 90s (`CHAINSAW_GROQ_TIMEOUT`) |
+| Token warn / hard | 6 000 / 10 000 |
+
+- API key from Streamlit secrets **or** `GROQ_API_KEY` env (never committed).
+- Groq client uses official SDK retries for 429 / 5xx / connection errors.
+- User-facing errors are sanitized; details go to stderr logs.
+- Chat JSON is written atomically (temp file + replace).
+- Non-root Docker user (`uid 10001`).
+- See [PRIVACY.md](PRIVACY.md) for data handling.
 
 ## 📜 License
 

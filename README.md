@@ -2,7 +2,7 @@
 
 A minimalist, production-oriented **AI chat app** built with **Python**, **Streamlit**, and the official **Groq Cloud SDK**.
 
-Streams open-source LLMs in real time via Groq — no local GPU required. Developed and tested with **Debian 13 (Trixie)** in mind.
+Streams open-source LLMs in real time via Groq — no local GPU required. Tuned for **Debian 13 (Trixie)**.
 
 ## ✨ Features
 
@@ -22,112 +22,106 @@ Streams open-source LLMs in real time via Groq — no local GPU required. Develo
 
 ```
 app.py                 # Streamlit UI
-lib/                   # Application package (config, storage, Groq, clustering, search)
+lib/                   # Application package
 scripts/
-  setup_debian.sh      # Debian/Ubuntu venv setup (PEP 668 safe)
-  run.sh               # Activate venv and start Streamlit
+  setup_debian.sh      # venv + pip install (works from any directory)
+  run.sh               # start app (works from any directory)
 Dockerfile
 data/                  # Local chats/settings (gitignored)
 ```
 
-## 🐧 Debian 13 / Ubuntu (recommended)
+## 🐧 Debian 13 / Ubuntu
 
-Debian and Ubuntu mark system Python as **externally managed** (PEP 668).
-Installing packages with system `pip` fails with:
+System Python is **externally managed** (PEP 668). Do **not** use system `pip`, `sudo pip`, or `--break-system-packages`.
 
-```text
-error: externally-managed-environment
-```
+**Shell note:** Debian is case-sensitive. The directory command is lowercase `cd` (not `CD`). The setup scripts find the project root themselves — you do **not** need to change directory first.
 
-**Always use a virtual environment.** Do not use `sudo pip` or `--break-system-packages`.
-
-### One-command setup
+### Setup (no `cd` required)
 
 ```bash
 git clone https://github.com/Dr-Aura/ideal-chainsaw.git
-cd ideal-chainsaw
+
+# Run setup by path — works from wherever you are
+bash ideal-chainsaw/scripts/setup_debian.sh
+```
+
+Or if you are already inside the repo folder:
+
+```bash
 bash scripts/setup_debian.sh
+```
+
+Recreate the venv from scratch:
+
+```bash
+bash ideal-chainsaw/scripts/setup_debian.sh --force
 ```
 
 The script will:
 
-1. Install `python3-venv` / `python3-pip` via apt if missing (asks for sudo)
-2. Create `ai-env/`
-3. `pip install -r requirements.txt` **inside the venv only**
-4. Create a template `.streamlit/secrets.toml` if none exists
+1. Install `python3-venv` / `python3-pip` via apt if missing
+2. Create `ideal-chainsaw/ai-env/`
+3. Install everything from `requirements.txt` **inside the venv**
+4. Create `.streamlit/secrets.toml` if missing
+5. Verify imports (`streamlit`, `groq`, etc.)
 
-### Run
+### Run (no `cd` required)
 
 ```bash
-bash scripts/run.sh
-# or:
-source ai-env/bin/activate
-streamlit run app.py
+bash ideal-chainsaw/scripts/run.sh
 ```
 
-Edit `.streamlit/secrets.toml` and set your real `GROQ_API_KEY`, or:
+Put your key in `ideal-chainsaw/.streamlit/secrets.toml`:
+
+```toml
+GROQ_API_KEY = "gsk_your_real_key"
+```
+
+Or:
 
 ```bash
 export GROQ_API_KEY=gsk_...
-source ai-env/bin/activate
-streamlit run app.py
-```
-
-### Manual steps (same result)
-
-```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip
-
-python3 -m venv ai-env
-source ai-env/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-
-mkdir -p .streamlit
-printf '%s\n' 'GROQ_API_KEY = "gsk_your_actual_private_key_here"' > .streamlit/secrets.toml
-
-streamlit run app.py
+bash ideal-chainsaw/scripts/run.sh
 ```
 
 Open http://localhost:8501/
 
-## 🐳 Docker (avoids host Python entirely)
+### If a path fails
 
 ```bash
-docker build -t ideal-chainsaw .
+# Show where you are and list the repo
+pwd
+ls -la ideal-chainsaw/scripts/
+
+# Use an absolute path (replace with your real home path)
+bash /home/YOURUSER/ideal-chainsaw/scripts/setup_debian.sh
+bash /home/YOURUSER/ideal-chainsaw/scripts/run.sh
+```
+
+## 🐳 Docker (no host Python / no venv)
+
+```bash
+docker build -t ideal-chainsaw ideal-chainsaw
 docker run --rm -p 8501:8501 \
   -e GROQ_API_KEY=gsk_... \
   -v chainsaw-data:/app/data \
   ideal-chainsaw
 ```
 
-Health endpoint: `http://localhost:8501/_stcore/health`
-
 ## ☁️ Streamlit Community Cloud
 
 1. Deploy this repo.
 2. Secrets → `GROQ_API_KEY = "gsk_..."`
-3. Filesystem is **ephemeral** — chats reset on reboot. Use **Export** for anything important, or run Docker/local for durable storage.
+3. Disk is ephemeral — use **Export** for important chats, or Docker/local for durable storage.
 
 ## 🔒 Production notes
 
 | Guard | Default |
 |-------|---------|
-| Max user message | 12 000 chars (`CHAINSAW_MAX_MSG_CHARS`) |
-| Max messages / chat | 200 (`CHAINSAW_MAX_MESSAGES`) |
-| Max stored chats | 50 (`CHAINSAW_MAX_CHATS`) |
-| Groq retries | 5 (`CHAINSAW_GROQ_RETRIES`) |
-| Groq timeout | 90s (`CHAINSAW_GROQ_TIMEOUT`) |
-| Token warn / hard | 6 000 / 10 000 |
+| Max user message | 12 000 chars |
+| Max messages / chat | 200 |
+| Max stored chats | 50 |
+| Groq retries | 5 |
+| Groq timeout | 90s |
 
-- API key from Streamlit secrets **or** `GROQ_API_KEY` env (never committed).
-- Groq client uses official SDK retries for 429 / 5xx / connection errors.
-- User-facing errors are sanitized; details go to stderr logs.
-- Chat JSON is written atomically (temp file + replace).
-- Non-root Docker user (`uid 10001`).
-- See [PRIVACY.md](PRIVACY.md) for data handling.
-
-## 📜 License
-
-MIT — see [LICENSE](LICENSE).
+See [PRIVACY.md](PRIVACY.md). MIT license — [LICENSE](LICENSE).

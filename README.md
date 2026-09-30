@@ -2,7 +2,7 @@
 
 A minimalist, production-oriented **AI chat app** built with **Python**, **Streamlit**, and the official **Groq Cloud SDK**.
 
-Streams open-source LLMs in real time via Groq — no local GPU required.
+Streams open-source LLMs in real time via Groq — no local GPU required. Developed and tested with **Debian 13 (Trixie)** in mind.
 
 ## ✨ Features
 
@@ -21,42 +21,78 @@ Streams open-source LLMs in real time via Groq — no local GPU required.
 ## 🏗️ Project layout
 
 ```
-app.py              # Streamlit UI
-lib/
-  config.py         # Limits, presets, API key resolution
-  storage.py        # Atomic JSON persistence
-  groq_ops.py       # Client, retries, streaming, embeddings, STT
-  clustering.py     # K-means + topic labels
-  search.py         # DuckDuckGo helper
-Dockerfile          # Non-root image + healthcheck
-data/               # Local chats/settings (gitignored)
+app.py                 # Streamlit UI
+lib/                   # Application package (config, storage, Groq, clustering, search)
+scripts/
+  setup_debian.sh      # Debian/Ubuntu venv setup (PEP 668 safe)
+  run.sh               # Activate venv and start Streamlit
+Dockerfile
+data/                  # Local chats/settings (gitignored)
 ```
 
-## 🚀 Local setup
+## 🐧 Debian 13 / Ubuntu (recommended)
+
+Debian and Ubuntu mark system Python as **externally managed** (PEP 668).
+Installing packages with system `pip` fails with:
+
+```text
+error: externally-managed-environment
+```
+
+**Always use a virtual environment.** Do not use `sudo pip` or `--break-system-packages`.
+
+### One-command setup
 
 ```bash
 git clone https://github.com/Dr-Aura/ideal-chainsaw.git
 cd ideal-chainsaw
-python3 -m venv ai-env
+bash scripts/setup_debian.sh
+```
+
+The script will:
+
+1. Install `python3-venv` / `python3-pip` via apt if missing (asks for sudo)
+2. Create `ai-env/`
+3. `pip install -r requirements.txt` **inside the venv only**
+4. Create a template `.streamlit/secrets.toml` if none exists
+
+### Run
+
+```bash
+bash scripts/run.sh
+# or:
 source ai-env/bin/activate
-pip install -r requirements.txt
-
-mkdir -p .streamlit
-cat << 'EOF' > .streamlit/secrets.toml
-GROQ_API_KEY = "gsk_your_actual_private_key_here"
-EOF
-
 streamlit run app.py
 ```
 
-Or with an environment variable instead of secrets:
+Edit `.streamlit/secrets.toml` and set your real `GROQ_API_KEY`, or:
 
 ```bash
 export GROQ_API_KEY=gsk_...
+source ai-env/bin/activate
 streamlit run app.py
 ```
 
-## 🐳 Docker
+### Manual steps (same result)
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip
+
+python3 -m venv ai-env
+source ai-env/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+mkdir -p .streamlit
+printf '%s\n' 'GROQ_API_KEY = "gsk_your_actual_private_key_here"' > .streamlit/secrets.toml
+
+streamlit run app.py
+```
+
+Open http://localhost:8501/
+
+## 🐳 Docker (avoids host Python entirely)
 
 ```bash
 docker build -t ideal-chainsaw .

@@ -1,46 +1,47 @@
-# Custom Cloud AI Assistant 🤖
+# ideal-chainsaw 🤖
 
-A minimalist, high-contrast, fully responsive **AI Chat Application** built using **Python**, **Streamlit**, and the official **Groq Cloud SDK**. This project was developed and optimized natively on **Debian 13 (Trixie)**.
+A minimalist, high-contrast **AI chat app** built with **Python**, **Streamlit**, and the official **Groq Cloud SDK**. Developed on **Debian 13 (Trixie)**.
 
-The application bypasses heavy local hardware constraints (like dedicated GPUs) by securely communicating with Groq's high-speed inference clusters to stream large open-source language models natively in real-time.
+Streams open-source LLMs in real time via Groq — no local GPU required.
 
 ## ✨ Key Features
-- **Official Groq SDK Integration:** Built using type-safe completion streams (`chunk.choices[0].delta.content`) for robust, crash-free data processing.
-- **Dynamic Model Retrieval:** Automatically queries the live Groq engine catalog on boot to prevent broken dependencies from retired models.
-- **Persistent Context Memory:** Tracks full conversational history state dynamically across user prompts.
-- **K-means Topic Clustering:** Embeds the current conversation with Groq’s `nomic-embed-text-v1_5` model, runs K-means, projects results with PCA, and auto-labels topics via the selected LLM. Interactive Plotly scatter plot + cluster cards appear in the sidebar once you have enough messages.
-- **Minimalist Grayscale UI:** Features a high-visibility, lightweight monochrome palette designed for maximum legibility and responsiveness across devices.
-- **Creativity Control:** Features a live sidebar temperature slider to seamlessly adjust the model's tone from strict/analytical to creative/experimental.
 
-## 🛠️ Architecture & Tech Stack
-- **Frontend/Framework:** Streamlit (Responsive Viewport Mode)
-- **API Engine Client:** Official Groq Python Client Library (chat + embeddings)
-- **Clustering:** scikit-learn (K-means + PCA) + Plotly for visualization
-- **Operating System Baseline:** Debian 13 Linux
+- **Official Groq SDK** — typed streaming completions, embeddings, and Whisper transcription
+- **Dynamic model list** — live catalog from Groq (with safe fallbacks)
+- **Persistent named chats** — multiple conversations saved under `data/chats.json` (local)
+- **Message actions** — regenerate, continue, shorter / longer / more formal, download reply
+- **Context meter** — approximate token usage with optional “summarize older messages” trim
+- **System presets + profile** — Helpful / Engineer / Teacher / Concise / Creative / Custom, plus a persistent “about you” snippet
+- **Multi-model compare** — stream the same prompt to two models side by side
+- **Web search tool** — optional DuckDuckGo search injected into context when relevant
+- **Voice input** — record audio → Groq Whisper transcription → send as message
+- **K-means topic clustering** — Groq `nomic-embed-text-v1_5` embeddings + scikit-learn + PCA + LLM topic labels; scope = current chat or all chats
+- **Dark / light theme** — high-contrast grayscale UI
+- **Export** — download the current chat as Markdown
+- **Creativity control** — temperature slider
 
-## 🚀 Local Installation & Setup
+## 🛠️ Tech Stack
 
-If you want to run this private interface locally on your machine, follow these steps:
+| Layer | Tech |
+|-------|------|
+| UI | Streamlit |
+| LLM / embeddings / STT | Groq Python SDK |
+| Clustering | scikit-learn (K-means, PCA) + Plotly |
+| Web search | duckduckgo-search |
+| Persistence | Local JSON (`data/`) |
 
-### 1. Clone the Repository
+## 🚀 Local setup
+
 ```bash
 git clone https://github.com/Dr-Aura/ideal-chainsaw.git
 cd ideal-chainsaw
-```
-
-### 2. Create and Activate a Virtual Environment
-```bash
 python3 -m venv ai-env
-source ai-env/bin/activate
-```
-
-### 3. Install Package Dependencies
-```bash
+source ai-env/bin/activate   # Windows: ai-env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure Your Private API Credentials
-Create a local-only secrets configuration file (this file is protected by `.gitignore` so it stays safe from public commits):
+Create secrets (never commit this file):
+
 ```bash
 mkdir -p .streamlit
 cat << 'LOCAL_EOF' > .streamlit/secrets.toml
@@ -48,17 +49,24 @@ GROQ_API_KEY = "gsk_your_actual_private_key_here"
 LOCAL_EOF
 ```
 
-### 5. Boot Up the Interface
+Run:
+
 ```bash
 streamlit run app.py
 ```
-Open your web browser and navigate to `http://localhost:8501/`.
 
-## 🌐 Cloud Deployment
-This project is configured out-of-the-box for deployment on **Streamlit Community Cloud**. To deploy:
-1. Push this repository to your GitHub account.
-2. Link your account to Streamlit Community Cloud.
-3. Inject your `GROQ_API_KEY = "gsk_..."` directly into the deployment dashboard's **Secrets** management panel under TOML notation.
+Open `http://localhost:8501/`.
+
+Chat history and settings are stored in the local `data/` folder (gitignored).
+
+## 🌐 Streamlit Community Cloud
+
+1. Push this repo to GitHub.
+2. Deploy on Streamlit Community Cloud.
+3. Add `GROQ_API_KEY = "gsk_..."` under **Secrets** (TOML).
+
+Note: on Community Cloud the filesystem is ephemeral, so chat persistence resets on reboot. Export chats you care about, or run locally for durable history.
 
 ## 📜 License
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+MIT — see [LICENSE](LICENSE).

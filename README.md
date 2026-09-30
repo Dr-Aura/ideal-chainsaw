@@ -8,12 +8,14 @@ The application bypasses heavy local hardware constraints (like dedicated GPUs) 
 - **Official Groq SDK Integration:** Built using type-safe completion streams (`chunk.choices[0].delta.content`) for robust, crash-free data processing.
 - **Dynamic Model Retrieval:** Automatically queries the live Groq engine catalog on boot to prevent broken dependencies from retired models.
 - **Persistent Context Memory:** Tracks full conversational history state dynamically across user prompts.
+- **K-means Topic Clustering:** Embeds the current conversation with Groq’s `nomic-embed-text-v1_5` model, runs K-means, projects results with PCA, and auto-labels topics via the selected LLM. Interactive Plotly scatter plot + cluster cards appear in the sidebar once you have enough messages.
 - **Minimalist Grayscale UI:** Features a high-visibility, lightweight monochrome palette designed for maximum legibility and responsiveness across devices.
 - **Creativity Control:** Features a live sidebar temperature slider to seamlessly adjust the model's tone from strict/analytical to creative/experimental.
 
 ## 🛠️ Architecture & Tech Stack
 - **Frontend/Framework:** Streamlit (Responsive Viewport Mode)
-- **API Engine Client:** Official Groq Python Client Library
+- **API Engine Client:** Official Groq Python Client Library (chat + embeddings)
+- **Clustering:** scikit-learn (K-means + PCA) + Plotly for visualization
 - **Operating System Baseline:** Debian 13 Linux
 
 ## 🚀 Local Installation & Setup

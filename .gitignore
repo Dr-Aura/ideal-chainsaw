@@ -2,6 +2,9 @@
 .streamlit/secrets.toml
 .streamlit/secrets.toml.local
 
+# Local app data (chats, settings)
+data/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
+
+# Ensure project root is on sys.path (fixes ImportError when cwd is wrong)
+_ROOT = Path(__file__).resolve().parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 import numpy as np
 import plotly.express as px
@@ -17,6 +23,7 @@ from lib.config import (
     TOKEN_HARD,
     TOKEN_WARN,
     get_api_key,
+    secrets_help_text,
 )
 from lib.groq_ops import (
     build_system_prompt,
@@ -85,10 +92,8 @@ div[data-testid="stChatInput"]{background:#1e1e1e!important;border-top:1px solid
 # ---------------------------------------------------------------------------
 api_key = get_api_key()
 if not api_key:
-    st.error(
-        "Missing **GROQ_API_KEY**. Add it under Streamlit Secrets or set the "
-        "`GROQ_API_KEY` environment variable."
-    )
+    st.error("Missing or invalid **GROQ_API_KEY** (placeholder keys are rejected).")
+    st.markdown(secrets_help_text())
     st.stop()
 
 client = make_client(api_key)
@@ -484,7 +489,6 @@ if prompt:
 
     msgs = api_messages(system_content, chat["messages"])
     if extra:
-        # Insert search context before the latest user turn
         msgs.insert(-1, {"role": "system", "content": f"[WEB SEARCH]\n{extra[:6000]}"})
 
     with st.chat_message("assistant"):

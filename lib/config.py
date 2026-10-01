@@ -12,11 +12,13 @@ CHATS_FILE = DATA_DIR / "chats.json"
 SETTINGS_FILE = DATA_DIR / "settings.json"
 SECRETS_FILE = APP_ROOT / ".streamlit" / "secrets.toml"
 
-# Models
+# Models — prefer live catalog from API; these are used only if listing fails.
+# Note (2026): llama-3.1-8b-instant / llama-3.3-70b-versatile are retired for
+# free/developer tier. Use openai/gpt-oss-* instead.
 FALLBACK_MODELS = [
-    "llama-3.1-8b-instant",
-    "llama-3.3-70b-versatile",
     "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.8-27b",
 ]
 EMBEDDING_MODEL = os.getenv("CHAINSAW_EMBEDDING_MODEL", "nomic-embed-text-v1_5")
 WHISPER_MODEL = os.getenv("CHAINSAW_WHISPER_MODEL", "whisper-large-v3-turbo")

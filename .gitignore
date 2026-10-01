@@ -1,12 +1,22 @@
-# Streamlit secrets (never commit API keys)
+# Streamlit secrets (CRITICAL)
 .streamlit/secrets.toml
-.streamlit/secrets.toml.local
+.streamlit/config.toml
 
-# Local app data (chats, settings)
+# Local persistent data
 data/
+*.json
 
-# Python bytecode / packaging
+# Python Virtual Environments
+ai-env/
+.venv/
 __pycache__/
+*.pyc
+
+# Extra local secrets variants
+.streamlit/secrets.toml.local
+.streamlit/*.toml
+
+# Python packaging / bytecode
 *.py[cod]
 *$py.class
 *.so
@@ -25,13 +35,9 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# Virtual environments only (do NOT ignore the project package at lib/)
-.venv/
 venv/
 ENV/
 env/
-ai-env/
 
 # Cordova / Android build artifacts
 node_modules/

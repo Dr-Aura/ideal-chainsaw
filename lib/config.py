@@ -10,12 +10,13 @@ APP_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.getenv("CHAINSAW_DATA_DIR", str(APP_ROOT / "data")))
 CHATS_FILE = DATA_DIR / "chats.json"
 SETTINGS_FILE = DATA_DIR / "settings.json"
+SECRETS_FILE = APP_ROOT / ".streamlit" / "secrets.toml"
 
 # Models
 FALLBACK_MODELS = [
     "llama-3.1-8b-instant",
     "llama-3.3-70b-versatile",
-    "gemma2-9b-it",
+    "openai/gpt-oss-20b",
 ]
 EMBEDDING_MODEL = os.getenv("CHAINSAW_EMBEDDING_MODEL", "nomic-embed-text-v1_5")
 WHISPER_MODEL = os.getenv("CHAINSAW_WHISPER_MODEL", "whisper-large-v3-turbo")
@@ -64,19 +65,57 @@ DEFAULT_SETTINGS: dict = {
     "enable_search": False,
 }
 
+_PLACEHOLDER_FRAGMENTS = (
+    "your_actual_private_key",
+    "your_real_key",
+    "your_key_here",
+    "gsk_...",
+    "gsk_your",
+    "changeme",
+    "placeholder",
+)
+
+
+def _is_placeholder(key: str) -> bool:
+    k = key.strip().lower()
+    if not k.startswith("gsk_"):
+        return True
+    if len(k) < 20:
+        return True
+    return any(p in k for p in _PLACEHOLDER_FRAGMENTS)
+
 
 def get_api_key() -> str | None:
-    """Resolve API key from Streamlit secrets or environment."""
-    # Streamlit secrets (preferred in Cloud)
+    """Resolve API key from Streamlit secrets or environment. Rejects placeholders."""
+    candidates: list[str] = []
+
     try:
         import streamlit as st
 
         if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
-            key = st.secrets["GROQ_API_KEY"]
-            if key and str(key).strip():
-                return str(key).strip()
+            raw = st.secrets["GROQ_API_KEY"]
+            if raw is not None:
+                candidates.append(str(raw).strip())
     except Exception:
         pass
-    # Environment (Docker / local)
-    key = os.getenv("GROQ_API_KEY", "").strip()
-    return key or None
+
+    env = os.getenv("GROQ_API_KEY", "").strip()
+    if env:
+        candidates.append(env)
+
+    for key in candidates:
+        if key and not _is_placeholder(key):
+            return key
+    return None
+
+
+def secrets_help_text() -> str:
+    return (
+        f"Create or edit this file:\n\n`{SECRETS_FILE}`\n\n"
+        "With exactly:\n\n"
+        "```toml\n"
+        'GROQ_API_KEY = "gsk_your_real_key_from_console.groq.com"\n'
+        "```\n\n"
+        "Or run: `export GROQ_API_KEY=gsk_...` then restart the app.\n\n"
+        "Do **not** name a file after the key. The filename must be `secrets.toml`."
+    )

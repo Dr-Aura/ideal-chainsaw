@@ -22,6 +22,22 @@ log = logging.getLogger("chainsaw.groq")
 
 _NON_CHAT_HINTS = ("whisper", "embed", "guard", "tts", "orpheus", "prompt-guard")
 
+# Retired for free/developer tier (2026-08). Still listed by some APIs — hide them.
+_DEPRECATED_MODELS = frozenset(
+    {
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
+        "llama-3.1-70b-versatile",
+        "gemma2-9b-it",
+        "gemma-7b-it",
+        "mixtral-8x7b-32768",
+        "llama3-8b-8192",
+        "llama3-70b-8192",
+    }
+)
+
+_PREFERRED_PREFIXES = ("openai/gpt-oss", "qwen/", "meta-llama/llama-4")
+
 
 def make_client(api_key: str) -> Groq:
     return Groq(
@@ -38,9 +54,17 @@ def list_chat_models(client: Groq) -> list[str]:
             m.id
             for m in models.data
             if getattr(m, "active", True)
+            and m.id not in _DEPRECATED_MODELS
             and not any(h in m.id.lower() for h in _NON_CHAT_HINTS)
         ]
-        return sorted(ids) if ids else list(FALLBACK_MODELS)
+        if not ids:
+            return list(FALLBACK_MODELS)
+
+        def sort_key(mid: str) -> tuple:
+            preferred = 0 if any(mid.startswith(p) for p in _PREFERRED_PREFIXES) else 1
+            return (preferred, mid)
+
+        return sorted(ids, key=sort_key)
     except Exception as e:
         log.warning("model list failed: %s", e)
         return list(FALLBACK_MODELS)
@@ -52,7 +76,6 @@ def get_embeddings(client: Groq, texts: list[str]) -> np.ndarray:
     all_emb: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
         batch = texts[i : i + EMBED_BATCH_SIZE]
-        # Truncate very long strings for embedding safety
         batch = [t[:8000] for t in batch]
         try:
             resp = client.embeddings.create(
@@ -96,8 +119,15 @@ def stream_chat(
         yield "⚠️ Network error talking to Groq. Check your connection."
         log.error("connection error: %s", e)
     except APIStatusError as e:
-        yield f"⚠️ API error ({e.status_code}). Try another model or retry."
-        log.error("api status %s: %s", e.status_code, e)
+        msg = str(getattr(e, "message", "") or e)
+        if e.status_code == 404 or "model_not_found" in msg.lower() or "does not exist" in msg.lower():
+            yield (
+                f"⚠️ Model `{model}` is not available on your Groq plan. "
+                "Pick **openai/gpt-oss-20b** (or another model) in the sidebar."
+            )
+        else:
+            yield f"⚠️ API error ({e.status_code}). Try another model or retry."
+        log.error("api status %s model=%s: %s", e.status_code, model, e)
     except Exception as e:
         yield f"⚠️ Unexpected error: {type(e).__name__}"
         log.exception("stream_chat failed")
